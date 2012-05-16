@@ -1,4 +1,4 @@
-shh.require('shh/util/namespace.js');
+shh.require('shh:util/namespace.js');
 
 shh.find = function (name) {
     var names = name.split('.'),
@@ -51,7 +51,8 @@ if (!shh.class) {
 
                     listeners[name].push(callback);
 
-                    shh.require(name.split('.').join('/') + '.js');
+					// The first value is a schema; last is the js filename; and others are folders.
+                    shh.require(name.replace('.', ':').split('.').join('/') + '.js');
                 } else {
                     callback();
                 }

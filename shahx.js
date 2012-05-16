@@ -22,10 +22,15 @@ var shh = new (function () {
         
     this.time = time;
     
-    this.root = '';
+    this.src = {shh: 'shahx/'};
 
     this.require = function (file, callback) {
-        var script, newjs;
+        var script, newjs,
+        	arr = file.split(':'),
+        	scheme = arr[1] ? arr[0] : '',
+        	pfx = shh.src[scheme];
+        pfx = pfx ? pfx : scheme + '/';
+        file = arr[scheme ? 1 : 0];
 
         if (!loaded[file]) {
             if (!listeners[file]) {
@@ -58,7 +63,7 @@ var shh = new (function () {
                     onRequire(file);
                 };
                 
-                newjs.src = (DH.root ? DH.root : '') + file;
+                newjs.src = (pfx ? pfx : '') + file;
                 script.parentNode.insertBefore(newjs, script);
             }
         } else if (callback) {
