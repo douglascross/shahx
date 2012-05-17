@@ -26,7 +26,7 @@ shh.apply = function (target, config) {
 
 // Create this function from a function in an object instance created on-the-fly. The reason for this is to utilize 
 // some scoped variables as static.
-if (!shh.class) {
+if (!shh.create) {
     shh.apply(shh, new function () {
         var listeners = {},
             created = {},
@@ -58,8 +58,8 @@ if (!shh.class) {
                 }
             };
         
-        this.class = function (name, config) {
-            var extendsName,
+        this.create = function (name, config) {
+            var extendName,
                 // Do the actual build.
                 build = function () {
                     buildsToDo -= 1;
@@ -67,7 +67,7 @@ if (!shh.class) {
                     var names = name.split('.'),
                         lastName = names.pop(),
                         namespace = shh.namespace(names.join('.')),
-                        Parent = extendsName ? shh.find(extendsName) : function () {},
+                        Parent = extendName ? shh.find(extendName) : function () {},
                         Class, Bridge, noRun;
                         
                     Class = function () {
@@ -95,11 +95,11 @@ if (!shh.class) {
             buildsToDo += 1;
             buildsArray.push(name);
             if (config) {
-                extendsName = config.extends;    
+                extendName = config.extend;    
             }
-            if (extendsName) {
+            if (extendName) {
                 // A build with dependancy will have to be sure that what it is extending is built first.
-                require(extendsName, build);
+                require(extendName, build);
             } else {
                 build();
             }
