@@ -63,7 +63,7 @@ var shh = new (function () {
                     onRequire(file);
                 };
                 
-                newjs.src = (pfx ? pfx : '') + file;
+                newjs.src = (pfx ? pfx : '') + file + '?' + (new Date).getTime();
                 script.parentNode.insertBefore(newjs, script);
             }
         } else if (callback) {
