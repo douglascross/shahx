@@ -25,7 +25,7 @@ var shh = new (function () {
     this.src = {shh: 'shahx/'};
 
     this.fileRequire = function (file, callback) {
-        var script, newjs,
+        var script, fileref, type, isCss,
         	arr = file.split(':'),
         	scheme = arr[1] ? arr[0] : '',
         	pfx = shh.src[scheme];
@@ -41,9 +41,12 @@ var shh = new (function () {
                 listeners[file].push(callback);
             }
 
-            if (!requested[file]) {          
+            if (!requested[file]) {
+            	type = file.split('.').reverse()[0];
+            	isCss = type === 'css';
+            	          
                 script = document.getElementsByTagName('script')[0];
-                newjs = document.createElement('script');
+                fileref = document.createElement(isCss ? 'link' : 'script');
             
                 requested[file] = true;
                     
@@ -51,7 +54,7 @@ var shh = new (function () {
                 requiresToDo += 1;
                     
                 // IE 
-                newjs.onreadystatechange = function () {
+                fileref.onreadystatechange = function () {
                     if (newjs.readyState === 'loaded' || newjs.readyState === 'complete') {
                         newjs.onreadystatechange = null;
                         onRequire(file);
@@ -59,12 +62,17 @@ var shh = new (function () {
                 };
                 
                 // others
-                newjs.onload = function () {
+                fileref.onload = function () {
                     onRequire(file);
                 };
                 
-                newjs.src = (pfx ? pfx : '') + file + '?' + (new Date).getTime();
-                script.parentNode.insertBefore(newjs, script);
+                if (isCss) {
+                	fileref.setAttribute("rel", "stylesheet");
+                	fileref.setAttribute("type", "text/css");
+                }
+                
+                fileref[isCss ? 'href' : 'src'] = (pfx ? pfx : '') + file + '?' + (new Date).getTime();
+                script.parentNode.insertBefore(fileref, script);
             }
         } else if (callback) {
             callback();
