@@ -1,4 +1,5 @@
 shh.require('shh:util/namespace.js');
+shh.require('shh:util/type.js');
 
 shh.find = function (name) {
     var names = name.split('.'),
@@ -52,7 +53,7 @@ if (!shh.create) {
                     listeners[name].push(callback);
 
 					// The first value is a schema; last is the js filename; and others are folders.
-                    shh.require(name.replace('.', ':').split('.').join('/') + '.js');
+                    shh.require(name);
                 } else {
                     callback();
                 }
@@ -60,6 +61,7 @@ if (!shh.create) {
         
         this.create = function (name, config) {
             var extendName,
+            	requireArray,
                 // Do the actual build.
                 build = function () {
                     buildsToDo -= 1;
@@ -95,14 +97,30 @@ if (!shh.create) {
             buildsToDo += 1;
             buildsArray.push(name);
             if (config) {
-                extendName = config.extend;    
+                extendName = config.extend;  
+                requireArray = shh.toArray(config.require);
             }
+            requireArray.forEach(function (require) {
+            	shh.require(require);
+            });
             if (extendName) {
                 // A build with dependancy will have to be sure that what it is extending is built first.
                 require(extendName, build);
             } else {
                 build();
             }
+        };
+        
+        this.classRequire = function (name, callback) {
+        	this.fileRequire(name.replace('.', ':').split('.').join('/') + '.js', callback);
+        };
+        
+        this.require = function (name, callback) {
+        	if (name.match(':')) {
+        		this.fileRequire(name);
+        	} else {
+        		this.classRequire(name);
+        	}
         };
         
         this.classReady = function (callback) {

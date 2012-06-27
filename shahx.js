@@ -24,7 +24,7 @@ var shh = new (function () {
     
     this.src = {shh: 'shahx/'};
 
-    this.require = function (file, callback) {
+    this.fileRequire = function (file, callback) {
         var script, newjs,
         	arr = file.split(':'),
         	scheme = arr[1] ? arr[0] : '',
@@ -70,6 +70,10 @@ var shh = new (function () {
             callback();
         }
     };
+    
+    this.require = function (name, callback) {
+    	this.fileRequire(name, callback);
+    }
     
     this.requireReady = function (callback) {
         var lastChange = start,
