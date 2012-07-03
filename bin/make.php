@@ -14,13 +14,24 @@ echo $sourcedir; echo "<br>";
 $assets = array();
 $schemes = array();
 
-$assets[$source] = getAssetsFromHtml($source, $schemes);
+$assetgraph = array();
+
+$assets[$source] = getAssetsFromHtml($source);
 
 print_r($schemes); echo "<br>";
-print_r($assets); echo "<br>";
+echo "<br><pre>";print_r($assets); echo "</pre><br>";
+echo "<br><pre>";print_r($assetgraph); echo "</pre><br>";
+
+$js = getCompiledJs();
+echo strlen($js);
+echo "<br><pre>"; print_r($js); echo "</pre><br>";
+
+mkdir($sourcedir . "build/");
+file_put_contents($sourcedir . "build/shh.js", $js);
+
 
 function getAssetsFromHtml($source) {
-	global $sourcedir, $schemes;
+	global $sourcedir, $schemes, $assetgraph;
 	
 	$assets = array();
 	
@@ -58,9 +69,106 @@ function getAssetsFromHtml($source) {
 			$assetarr = explode(":", $asset);
 			$asset = count($assetarr) > 1 ? $schemes[$assetarr[0]] . $assetarr[1] : $asset;
 		}
-		$assets[$sourcedir . $asset] = true;
+		$source = $sourcedir . $asset;
+		if (!$assetgraph[$asset]) {
+			$assets[$asset] = getAssetsFromJs($source);
+			$assetgraph[$asset] = true;
+		}
 	}
 	
 	return $assets;
+}
+
+
+function getAssetsFromJs($source) {
+	global $sourcedir, $schemes, $assetgraph;
+	
+	$assets = array();
+	
+	$lines = file($source);
+	$content = implode("", $lines);
+	$content = str_replace("\n", "", $content);
+	
+	// get from requires
+	$requirerx = "shh.require\\s*\\(\\s*[\"']([^\"']*)[\"']\\)";
+	
+	// get from class extend
+	$extendrx = "extend\\s*:\\s*[\"']([^\"']*)[\"']";
+	
+	// get from module/class require
+	$requireattrx = "require\\s*:\\s*[\"']([^\"']*)[\"']";
+	
+	// get from module/class require
+	$requireattarrrx = "require\\s*:\\s*\\[\\s*[\"']([^\\]]*)[\"']\\s*\\]";
+	
+	$jsrx = "/($requirerx|$extendrx|$requireattrx|$requireattarrrx)/i";
+	
+	preg_match_all($jsrx, $content, $matches);
+	$jlen = count($matches[2]);
+	for($j = 0; $j < $jlen; $j += 1) {
+		$asset = $matches[2][$j];
+		if (!$asset) {
+			$asset = $matches[3][$j];
+		}
+		if (!$asset) {
+			$asset = $matches[4][$j];
+		}
+		if (!$asset) {
+			$assetsarr = preg_split("/[\"']\\s*,\\s*[\"']/", $matches[5][$j]);
+			$klen = count($assetsarr);
+			for ($k = 0; $k < $klen; $k += 1) {
+				$asset = $assetsarr[$k];
+				echo $asset;
+				$assetarr = explode(":", $asset);
+				$asset = count($assetarr) > 1 ? $schemes[$assetarr[0]] . $assetarr[1] : $asset;
+				if (!strstr($asset, "/")) {
+					$assetarr = explode(".", $asset);
+					$asset = $schemes[array_shift($assetarr)] . implode("/", $assetarr) . ".js";
+				}
+				$source = $sourcedir . $asset;
+				if (!$assetgraph[$asset]) {
+					$assets[$asset] = getAssetsFromJs($source);
+					$assetgraph[$asset] = true;
+				}
+			}
+		}
+		$assetarr = explode(":", $asset);
+		$asset = count($assetarr) > 1 ? $schemes[$assetarr[0]] . $assetarr[1] : $asset;
+		if (!strstr($asset, "/")) {
+			$assetarr = explode(".", $asset);
+			$asset = $schemes[array_shift($assetarr)] . implode("/", $assetarr) . ".js";
+		}
+		$source = $sourcedir . $asset;
+		if (!$assetgraph[$asset]) {
+			$assets[$asset] = getAssetsFromJs($source);
+			$assetgraph[$asset] = true;
+		}
+	}
+	
+	return $assets;
+}
+
+function getCompiledJs() {
+	global $sourcedir, $assetgraph;
+	
+	$js = "";
+	
+	foreach($assetgraph as $asset=>$value) {
+		$type = strtolower(array_pop(explode(".", $asset)));
+		if ($type == "js") {
+			$lines = file($sourcedir . $asset);
+			$content = implode("", $lines);
+			$js .= $content . "\n";
+			if (strstr($asset, "shahx.js")) {
+				$jsassets = "";
+				foreach($assetgraph as $asset2=>$value2) {
+					$jsassets .= ($jsassets ? ",\n" : "") . "    '$asset2'";
+				}
+				$js .= "shh.markLoaded([\n$jsassets\n]);\n\n";
+			}
+		}
+	}
+	
+	return $js;
 }
 ?>

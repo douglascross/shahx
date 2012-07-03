@@ -23,6 +23,18 @@ var shh = new (function () {
     this.time = time;
     
     this.src = {shh: 'shahx/'};
+    
+    this.markLoaded = function (files) {
+    	files.forEach(function (file) {
+    		loaded[file] = true;
+    		if (requested[file]) {
+	            requiresToDo -= 1;
+	            listeners[file].forEach(function (listener) {
+	                listener();
+	            });
+    		}
+    	});
+    };
 
     this.fileRequire = function (file, callback) {
         var script, fileref, type, isCss,
@@ -30,7 +42,7 @@ var shh = new (function () {
         	scheme = arr[1] ? arr[0] : '',
         	pfx = shh.src[scheme];
         pfx = pfx ? pfx : scheme + '/';
-        file = arr[scheme ? 1 : 0];
+        file = (pfx ? pfx : '') + arr[scheme ? 1 : 0];
 
         if (!loaded[file]) {
             if (!listeners[file]) {
@@ -71,7 +83,7 @@ var shh = new (function () {
                 	fileref.setAttribute("type", "text/css");
                 }
                 
-                fileref[isCss ? 'href' : 'src'] = (pfx ? pfx : '') + file + '?' + (new Date).getTime();
+                fileref[isCss ? 'href' : 'src'] = file + '?' + (new Date).getTime();
                 script.parentNode.insertBefore(fileref, script);
             }
         } else if (callback) {
