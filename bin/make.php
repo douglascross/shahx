@@ -31,7 +31,7 @@ file_put_contents($sourcedir . "build/shh.js", $js);
 
 
 function getAssetsFromHtml($source) {
-	global $sourcedir, $schemes, $assetgraph;
+	global $sourcedir, $schemes, $assetgraph, $prefixesstr;
 	
 	$assets = array();
 	
@@ -40,7 +40,8 @@ function getAssetsFromHtml($source) {
 	$content = str_replace("\n", "", $content);
 	
 	// get prefixes/schemes
-	preg_match_all("/shh.src\\s*=\\s*{\\s*([^}]*)\\s*}/m", $content, $matches);
+	preg_match_all("/shh.src\\s*=\\s*{\\s*([^}]*)\\s*}\\s*;+/m", $content, $matches);
+	$prefixesstr = $matches[0][0];
 	$jlen = count($matches[1]);
 	for($j = 0; $j < $jlen; $j += 1) {
 		$schemestr = $matches[1][$j];
@@ -149,7 +150,7 @@ function getAssetsFromJs($source) {
 }
 
 function getCompiledJs() {
-	global $sourcedir, $assetgraph;
+	global $sourcedir, $assetgraph, $prefixesstr;
 	
 	$js = "";
 	
@@ -160,6 +161,7 @@ function getCompiledJs() {
 			$content = implode("", $lines);
 			$js .= $content . "\n";
 			if (strstr($asset, "shahx.js")) {
+				$js .= "$prefixesstr\n\n";
 				$jsassets = "";
 				foreach($assetgraph as $asset2=>$value2) {
 					$jsassets .= ($jsassets ? ",\n" : "") . "    '$asset2'";
