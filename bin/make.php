@@ -159,6 +159,9 @@ function getCompiledJs() {
 		if ($type == "js") {
 			$lines = file($sourcedir . $asset);
 			$content = implode("", $lines);
+			if (mb_detect_encoding($content, 'UTF-8', true)) {
+				$content = iconv("UTF-8", "ISO-8859-1//IGNORE", $content);
+			}
 			$js .= $content . "\n";
 			if (strstr($asset, "shahx.js")) {
 				$js .= "$prefixesstr\n\n";
