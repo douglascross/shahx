@@ -27,7 +27,7 @@ echo strlen($js);
 echo "<br><pre>"; print_r($js); echo "</pre><br>";
 
 mkdir($sourcedir . "build/");
-file_put_contents($sourcedir . "build/shh.js", iconv("ISO-8859-1", "UTF-8//IGNORE", str_replace("\r", "", $js)));
+file_put_contents($sourcedir . "build/shh.js", iconv("ISO-8859-1", "UTF-8//IGNORE", str_replace("\r", "\n", str_replace("\r\n", "\n", $js))));
 
 
 function getAssetsFromHtml($source) {
