@@ -166,7 +166,7 @@ function getCompiledJs() {
 		if ($type == "js") {
 			$lines = file($sourcedir . $asset);
 			$content = implode("", $lines);
-			if (mb_detect_encoding($content, 'ISO-8859-1', true)) {
+			if (mb_detect_encoding($content, 'ISO-8859-1', true) && !mb_detect_encoding($content, 'UTF-8', true)) {
 				$content = iconv("ISO-8859-1", "UTF-8", $content);
 			}
 			$js .= $content . "\n";
