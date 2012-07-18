@@ -23,11 +23,18 @@ echo "<br><pre>";print_r($assets); echo "</pre><br>";
 echo "<br><pre>";print_r($assetgraph); echo "</pre><br>";
 
 $js = getCompiledJs();
+$js = str_replace("\r", "\n", str_replace("\r\n", "\n", $js));
 echo strlen($js);
 echo "<br><pre>"; print_r($js); echo "</pre><br>";
 
 mkdir($sourcedir . "build/");
-file_put_contents($sourcedir . "build/shh.js", iconv("ISO-8859-1", "UTF-8//IGNORE", str_replace("\r", "\n", str_replace("\r\n", "\n", $js))));
+
+if (mb_detect_encoding($js, 'UTF-8', true)) {
+	file_put_contents($sourcedir . "build/shh.js", $js);
+	echo "Build succeeded";
+} else {
+	echo "Build failed! - not UTF-8 encoded";
+}
 
 
 function getAssetsFromHtml($source) {
@@ -159,8 +166,8 @@ function getCompiledJs() {
 		if ($type == "js") {
 			$lines = file($sourcedir . $asset);
 			$content = implode("", $lines);
-			if (mb_detect_encoding($content, 'UTF-8', true)) {
-				$content = iconv("UTF-8", "ISO-8859-1//IGNORE", $content);
+			if (mb_detect_encoding($content, 'ISO-8859-1', true)) {
+				$content = iconv("ISO-8859-1", "UTF-8", $content);
 			}
 			$js .= $content . "\n";
 			if (strstr($asset, "shahx.js")) {
