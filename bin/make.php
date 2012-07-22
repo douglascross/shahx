@@ -1,39 +1,48 @@
-Enter the relative destination of the root page (usually index.html).<br>
+<?php
+$source = array_key_exists("source", $_GET) ? $_GET["source"] : null;
+$destjs = array_key_exists("destjs", $_GET) ? $_GET["destjs"] : null;
+$exjs = array_key_exists("exjs", $_GET) ? $_GET["exjs"] : null;
+?>
 <form method="get">
-<input type="text" name="source" value="../../../../index.html">
+<label>Source file</label><input type="text" name="source" value="<?php echo isset($source) ? $source : "index.html"; ?>"><br>
+<label>Destination js file</label><input type="text" name="destjs" value="<?php echo isset($destjs) ? $destjs : "shh.js"; ?>"><br>
+<label>Exclude js files</label><input type="text" name="exjs" value="<?php echo isset($exjs) ? $exjs : ""; ?>"><br>
 <input type="submit">
 </form>
 <?php
-$source = $_GET["source"];
-
-$sourcearr = explode("/", $source);
-array_pop($sourcearr);
-$sourcedir = count($sourcearr) ? implode("/", $sourcearr) . "/" : "";
-echo $sourcedir; echo "<br>";
-
-$assets = array();
-$schemes = array();
-
-$assetgraph = array();
-
-$assets[$source] = getAssetsFromHtml($source);
-
-print_r($schemes); echo "<br>";
-echo "<br><pre>";print_r($assets); echo "</pre><br>";
-echo "<br><pre>";print_r($assetgraph); echo "</pre><br>";
-
-$js = getCompiledJs();
-$js = str_replace("\r", "\n", str_replace("\r\n", "\n", $js));
-echo strlen($js);
-echo "<br><pre>"; print_r($js); echo "</pre><br>";
-
-mkdir($sourcedir . "build/");
-
-if (mb_detect_encoding($js, 'UTF-8', true)) {
-	file_put_contents($sourcedir . "build/shh.js", $js);
-	echo "Build succeeded";
-} else {
-	echo "Build failed! - not UTF-8 encoded";
+if($source) {
+	
+	$root = "../../";
+	
+	$source = $root . $source;
+	$destjs = $root . $destjs;
+	
+	$sourcearr = explode("/", $source);
+	array_pop($sourcearr);
+	$sourcedir = count($sourcearr) ? implode("/", $sourcearr) . "/" : "";
+	
+	$assets = array();
+	$schemes = array();
+	
+	$assetgraph = array();
+	
+	$assets[$source] = getAssetsFromHtml($source);
+	
+	//print_r($schemes); echo "<br>";
+	//echo "<br><pre>";print_r($assets); echo "</pre><br>";
+	echo "<br><pre>";print_r($assetgraph); echo "</pre><br>";
+	
+	$js = getCompiledJs();
+	$js = str_replace("\r", "\n", str_replace("\r\n", "\n", $js));
+	echo round(strlen($js) / 1024) . " kB<br>";
+	//echo "<br><pre>"; print_r($js); echo "</pre><br>";
+	
+	if (mb_detect_encoding($js, 'UTF-8', true)) {
+		file_put_contents($destjs, $js);
+		echo "Build succeeded";
+	} else {
+		echo "Build failed! - not UTF-8 encoded";
+	}
 }
 
 
@@ -78,7 +87,7 @@ function getAssetsFromHtml($source) {
 			$asset = count($assetarr) > 1 ? $schemes[$assetarr[0]] . $assetarr[1] : $asset;
 		}
 		$source = $sourcedir . $asset;
-		if (!$assetgraph[$asset]) {
+		if (!array_key_exists($asset, $assetgraph)) {
 			$assets[$asset] = getAssetsFromJs($source);
 			$assetgraph[$asset] = true;
 		}
@@ -126,7 +135,6 @@ function getAssetsFromJs($source) {
 			$klen = count($assetsarr);
 			for ($k = 0; $k < $klen; $k += 1) {
 				$asset = $assetsarr[$k];
-				echo $asset;
 				$assetarr = explode(":", $asset);
 				$asset = count($assetarr) > 1 ? $schemes[$assetarr[0]] . $assetarr[1] : $asset;
 				if (!strstr($asset, "/")) {
@@ -134,7 +142,7 @@ function getAssetsFromJs($source) {
 					$asset = $schemes[array_shift($assetarr)] . implode("/", $assetarr) . ".js";
 				}
 				$source = $sourcedir . $asset;
-				if (!$assetgraph[$asset]) {
+				if (!array_key_exists($asset, $assetgraph)) {
 					$assets[$asset] = getAssetsFromJs($source);
 					$assetgraph[$asset] = true;
 				}
@@ -147,13 +155,24 @@ function getAssetsFromJs($source) {
 			$asset = $schemes[array_shift($assetarr)] . implode("/", $assetarr) . ".js";
 		}
 		$source = $sourcedir . $asset;
-		if (!$assetgraph[$asset]) {
+		if (!array_key_exists($asset, $assetgraph)) {
 			$assets[$asset] = getAssetsFromJs($source);
 			$assetgraph[$asset] = true;
 		}
 	}
 	
 	return $assets;
+}
+
+function inExcludeList($asset) {
+	global $exjs;
+	$exjsarray = $exjs ? preg_split("/ *, */", $exjs) : array();
+	foreach($exjsarray as $index=>$value) {
+		if (strstr($asset, $value)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 function getCompiledJs() {
@@ -163,10 +182,10 @@ function getCompiledJs() {
 	
 	foreach($assetgraph as $asset=>$value) {
 		$type = strtolower(array_pop(explode(".", $asset)));
-		if ($type == "js") {
+		if ($type == "js" && !inExcludeList($asset)) {
 			$lines = file($sourcedir . $asset);
 			$content = implode("", $lines);
-			if (mb_detect_encoding($content, 'ISO-8859-1', true) && !mb_detect_encoding($content, 'UTF-8', true)) {
+			if (!mb_detect_encoding($content, 'UTF-8', true)) {
 				$content = iconv("ISO-8859-1", "UTF-8", $content);
 			}
 			$js .= $content . "\n";
