@@ -35,14 +35,18 @@ var shh = new (function () {
     		}
     	});
     };
-
-    this.fileRequire = function (file, callback) {
-        var script, fileref, type, isCss,
-        	arr = file.split(':'),
+    
+    this.formatFile = function (file) {
+        var arr = file.split(':'),
         	scheme = arr[1] ? arr[0] : '',
         	pfx = shh.src[scheme];
         pfx = pfx ? pfx : scheme + '/';
-        file = (pfx ? pfx : '') + arr[scheme ? 1 : 0];
+    	return (pfx ? pfx : '') + arr[scheme ? 1 : 0]
+    };
+
+    this.fileRequire = function (file, callback) {
+        var script, fileref, type, isCss;
+        file = this.formatFile(file);
 
         if (!loaded[file]) {
             if (!listeners[file]) {
