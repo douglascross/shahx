@@ -117,9 +117,9 @@ if (!shh.create) {
         
         this.require = function (name, callback) {
         	if (name.match(':')) {
-        		this.fileRequire(name);
+        		this.fileRequire(name, callback);
         	} else {
-        		this.classRequire(name);
+        		this.classRequire(name, callback);
         	}
         };
         

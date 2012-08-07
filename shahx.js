@@ -13,11 +13,13 @@ var shh = new (function () {
         loaded = {},
         loadingCallback,
         onRequire = function (file) {
-            loaded[file] = true;
-            requiresToDo -= 1;
-            listeners[file].forEach(function (listener) {
-                listener();
-            });
+        	if (!loaded[file]) {
+	            loaded[file] = true;
+	            requiresToDo -= 1;
+	            listeners[file].forEach(function (listener) {
+	                listener();
+	            });
+            }
         };
         
     this.time = time;
