@@ -71,8 +71,8 @@ var shh = new (function () {
                     
                 // IE 
                 fileref.onreadystatechange = function () {
-                    if (newjs.readyState === 'loaded' || newjs.readyState === 'complete') {
-                        newjs.onreadystatechange = null;
+                    if (fileref.readyState === 'loaded' || fileref.readyState === 'complete') {
+                        fileref.onreadystatechange = null;
                         onRequire(file);
                     }
                 };
